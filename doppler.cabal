@@ -31,3 +31,13 @@ library
                        stm >= 2.4 && <2.5
   hs-source-dirs:      src
   default-language:    Haskell2010
+
+executable doppler-sample-skeleton
+  default-extensions:  QuasiQuotes
+  ghc-options:         -Wall
+  build-depends:       doppler,
+                       doppler-core,
+                       base >=4.9 && <4.10
+  main-is:             Main.hs
+  hs-source-dirs:      samples/skeleton
+  default-language:    Haskell2010

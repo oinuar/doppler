@@ -6,4 +6,14 @@ node_modules
 amd_modules
 cabal.sandbox.config
 *.tix
-dist
+core/dist
+dist/*
+!dist/build/
+dist/build/*
+
+!dist/build/doppler-sample-skeleton/
+dist/build/doppler-sample-skeleton/*
+!dist/build/doppler-sample-skeleton/doppler-sample-skeleton.jsexe/
+dist/build/doppler-sample-skeleton/doppler-sample-skeleton.jsexe/*
+!dist/build/doppler-sample-skeleton/doppler-sample-skeleton.jsexe/ext.js
+!dist/build/doppler-sample-skeleton/doppler-sample-skeleton.jsexe/index.html
