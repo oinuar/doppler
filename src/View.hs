@@ -11,8 +11,9 @@ import Event
 import HTML.Types
 import Control.Concurrent
 import Control.Concurrent.STM
-import Control.Monad
-import Data.JSString          (pack)
+import GHCJS.Foreign.Callback
+import GHCJS.Types            (JSVal)
+import Data.JSString          (JSString, pack)
 
 class View s where
    mkView :: EventHandler [Action] s -> s -> Expression
@@ -27,7 +28,7 @@ render initialState = do
    replaceBody root
 
    _ <- forkIO $ monitorStateChange stateVar initialState vdom tree root
-   startEventCapturing
+   startAsyncEventCapture
 
 monitorStateChange :: (Eq s, View s) => TVar s -> s -> VDom -> VTree -> DomNode -> IO ()
 monitorStateChange stateVar oldState vdom tree root = do
@@ -43,18 +44,26 @@ monitorStateChange stateVar oldState vdom tree root = do
 
    monitorStateChange stateVar newState vdom newTree newRoot
 
-startEventCapturing :: IO ()
-startEventCapturing = do
+startAsyncEventCapture :: IO ()
+startAsyncEventCapture = do
    evStore <- requireEvStore
 
-   _ <- forkIO $ forever $ do
-      let eventName = pack "click"
+   -- TODO: when to release the callback?
+   _ <- captureEvent evStore $ pack "click"
 
-      event <- onCapturedEvent eventName
-      target <- getEventTarget event
-      dispatchEvent evStore target eventName
+   -- TODO: add more captures.
 
    return ()
+
+captureEvent :: EvStore -> JSString -> IO (Callback (JSVal -> IO ()))
+captureEvent evStore name = do
+   callback' <- asyncCallback1 callback
+   startEventCapturing name callback'
+   return callback'
+   where
+      callback event = do
+         target <- getEventTarget event
+         dispatchEvent evStore target name
 
 liftEventHandler :: EventHandlerIO s -> EventHandler [Action] s
 liftEventHandler handler =

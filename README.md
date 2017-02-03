@@ -32,7 +32,7 @@ just take a look at samples.
 
 Project has two Cabal projects. Library `doppler-core` contains all generic Haskell
 source files. The main projet (`doppler`) contains only GHCJS depedency sources.
-This is done to allow us to build and test core the functionality of the library
+This is done to allow us to build and test core functionality of the library
 without GHCJS dependency. If you don't have [GHCJS](https://github.com/ghcjs/ghcjs)
 installed, please consult to GHCJS documentation for details.
 
