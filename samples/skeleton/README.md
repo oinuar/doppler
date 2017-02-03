@@ -1,4 +1,4 @@
-# Doppler skeleton sample
+## Doppler skeleton sample
 
 This sample contains a simple web page that shows how to...
 

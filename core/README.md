@@ -1,6 +1,6 @@
 ## How to build?
 
-Create and configured a sandbox for core project.
+Create and configure a sandbox.
 
 ```
 cabal sandbox init
