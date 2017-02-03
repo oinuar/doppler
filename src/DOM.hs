@@ -1,8 +1,7 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
 module DOM (
-   DomNode, startEventCapturing, stopEventCapturing,
-   getEventTarget, replaceBody
+   DomNode, startEventCapturing, stopEventCapturing, replaceBody
 ) where
 
 import GHCJS.Foreign.Callback
@@ -16,9 +15,6 @@ foreign import javascript unsafe "document.addEventListener($1, $2, true);"
 
 foreign import javascript unsafe "document.removeEventListener($1, $2, true);"
    stopEventCapturing :: JSString -> Callback (JSVal -> IO ()) -> IO ()
-
-foreign import javascript unsafe "$1.target"
-   getEventTarget :: JSVal -> IO DomNode
 
 foreign import javascript unsafe "while (document.body.hasChildNodes()) document.body.removeChild(document.body.firstChild); document.body.appendChild($1);"
    replaceBody :: DomNode -> IO ()
