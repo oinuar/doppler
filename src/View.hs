@@ -7,7 +7,7 @@ import VirtualDOM.VNode
 import VirtualDOM.Patch
 import DOM
 import EvStore
-import Event
+import EventHandler
 import HTML.Types
 import Control.Concurrent
 import Control.Concurrent.STM
@@ -23,7 +23,7 @@ render initialState = do
    stateVar <- newTVarIO initialState
 
    vdom <- requireVDom
-   tree <- linkVTree vdom $ mkView (liftEventHandler $ runEvent stateVar) initialState
+   tree <- linkVTree vdom $ mkView (runEvent stateVar) initialState
    root <- createDomNode vdom $ getRoot tree
    replaceBody root
 
@@ -35,7 +35,7 @@ monitorStateChange stateVar oldState vdom tree root = do
    (newState, expression) <- atomically $ do
       newState <- readTVar stateVar
       check (oldState /= newState)
-      return (newState, mkView (liftEventHandler $ runEvent stateVar) newState)
+      return (newState, mkView (runEvent stateVar) newState)
 
    newTree <- linkVTree vdom expression
    patches <- diff vdom (getRoot tree) (getRoot newTree)
@@ -65,6 +65,9 @@ startEventSink evStore name = do
    startEventCapturing name delegate
    return delegate
 
-liftEventHandler :: EventHandlerIO s -> EventHandler [Action] s
-liftEventHandler handler =
-   pure . Action . handler
+runEvent :: TVar s -> EventHandler [Action] s
+runEvent stateVar handler =
+   [Action runStateUpdate]
+   where
+      runStateUpdate event =
+         atomically $ modifyTVar stateVar $ handler event

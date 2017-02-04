@@ -6,6 +6,7 @@ module VirtualDOM.VNode (
 
 import HTML.Types
 import VirtualDOM.VDom
+import Event
 import GHCJS.Types
 import GHCJS.Foreign.Callback
 import JavaScript.Object
@@ -75,11 +76,12 @@ linkVTree vdom expression = do
       toCallbackVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (IO ())]))
       toCallbackVal key =
          case key of
-            'o':'n':x:xs -> fmap (toCallbackVal' $ mkKey x xs) . foldr joinAction Nothing
+            'o':'n':x:xs -> fmap (toCallbackVal' $ mkKey x xs) . foldl joinAction Nothing
             _ -> const Nothing
          where
             toCallbackVal' key' action = (pack key', do
-               callback <- asyncCallback action
+               -- TODO: Marshal event from JS
+               callback <- asyncCallback $ action FocusEvent
                return (jsval callback, [callback]))
 
             mkKey x xs =
@@ -113,14 +115,16 @@ linkVTree vdom expression = do
       joinCss _ acc =
          acc
 
-      joinAction :: Value -> Maybe (IO ()) -> Maybe (IO ())
-      joinAction (EventValue (Action action)) Nothing =
+      joinAction :: Maybe (Event -> IO ()) -> Value -> Maybe (Event -> IO ())
+      joinAction Nothing (EventValue (Action action)) =
          Just action
 
-      joinAction (EventValue (Action action)) (Just acc) =
-         Just $ do { action; acc; }
+      joinAction (Just acc) (EventValue (Action action)) =
+         Just $ \event -> do
+            acc event
+            action event
 
-      joinAction _ acc =
+      joinAction acc _ =
          acc
 
 unlinkVTree :: VTree -> IO VTree

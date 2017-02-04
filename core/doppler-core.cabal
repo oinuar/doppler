@@ -14,7 +14,8 @@ library
   exposed-modules:     HTML.Types,
                        HTML.Syntax,
                        CSS.Types,
-                       CSS.Syntax
+                       CSS.Syntax,
+                       Event
   other-modules:       Core.Syntax,
                        Core.Interpolation,
                        HTML.Expression,

@@ -45,5 +45,5 @@ instance View ApplicationState where
                2 -> "blue"
                _ -> "white"
 
-         click state =
+         click _ state =
             state { getNumberOfClicks = getNumberOfClicks state + 1 }

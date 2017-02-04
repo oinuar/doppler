@@ -7,11 +7,12 @@ module HTML.Attribute (
 
 import Core.Interpolation
 import CSS.Types                  (Property)
+import Event
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 
 type Key = String
-newtype Action = Action (IO ())
+newtype Action = Action (Event -> IO ())
 
 data Value =
      StringValue String
