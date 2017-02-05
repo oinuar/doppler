@@ -1,4 +1,4 @@
-module Event (
+module Event.Types (
    Event (..)
 ) where
 
@@ -7,9 +7,6 @@ import Data.Int
 
 data Event =
      FocusEvent
-   | FormEvent
-   | ViewEvent
-   | InputEvent
    | KeyboardEvent {
       getCharCode :: Word,
       getKeyCode :: Word,
@@ -20,10 +17,10 @@ data Event =
       getKbAltKey :: Bool,
       getKbMetaKey :: Bool }
    | MouseEvent {
-      screenX :: Int64,
-      screenY :: Int64,
-      clientX :: Int64,
-      clientY :: Int64,
-      button :: Word16,
-      buttons :: Word16 }
-   deriving (Eq)
+      getScreenX :: Int32,
+      getScreenY :: Int32,
+      getClientX :: Int32,
+      getClientY :: Int32,
+      getButton :: Word16,
+      getButtons :: Word16 }
+   deriving (Eq, Show)

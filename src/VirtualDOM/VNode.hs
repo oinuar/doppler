@@ -8,6 +8,7 @@ import HTML.Types
 import VirtualDOM.VDom
 import Event
 import GHCJS.Types
+import GHCJS.Marshal
 import GHCJS.Foreign.Callback
 import JavaScript.Object
 import qualified CSS.Types  as CSS
@@ -21,7 +22,7 @@ newtype VNode = VNode { jsVNode :: JSVal }
 
 data VTree = VTree {
    getRoot :: VNode,
-   getAttachedEventListeners :: [Callback (IO ())]
+   getAttachedEventListeners :: [Callback (JSVal -> IO ())]
 }
 
 linkVTree :: VDom -> Expression -> IO VTree
@@ -32,7 +33,7 @@ linkVTree vdom expression = do
       getAttachedEventListeners = eventListeners
    }
    where
-      toVNode' :: Expression -> IO (VNode, [Callback (IO ())])
+      toVNode' :: Expression -> IO (VNode, [Callback (JSVal -> IO ())])
       toVNode' (Text content) =
          flip (,) [] <$> mkTextNode vdom (pack content)
 
@@ -58,14 +59,14 @@ linkVTree vdom expression = do
       setAttribute _ acc =
          acc
 
-      toStringVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (IO ())]))
+      toStringVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (JSVal -> IO ())]))
       toStringVal key =
          fmap toStringVal' . foldr joinString Nothing
          where
             toStringVal' =
                (,) (pack key) . return . flip (,) [] . jsval . pack
 
-      toCssVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (IO ())]))
+      toCssVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (JSVal -> IO ())]))
       toCssVal key =
          fmap toCssVal' . foldr joinCss Nothing
          where
@@ -73,16 +74,24 @@ linkVTree vdom expression = do
                obj' <- obj
                return (jsval obj', []))
 
-      toCallbackVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (IO ())]))
+      toCallbackVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (JSVal -> IO ())]))
       toCallbackVal key =
          case key of
             'o':'n':x:xs -> fmap (toCallbackVal' $ mkKey x xs) . foldl joinAction Nothing
             _ -> const Nothing
          where
             toCallbackVal' key' action = (pack key', do
-               -- TODO: Marshal event from JS
-               callback <- asyncCallback $ action FocusEvent
+               callback <- asyncCallback1 $ runAction action
                return (jsval callback, [callback]))
+
+            runAction action val = do
+               event <- fromJSVal val
+
+               case event of
+                  Just event' -> do
+                     print (toEvent event')
+                     action $ toEvent event'
+                  Nothing -> return ()
 
             mkKey x xs =
                "ev-" ++ toLower x : xs
@@ -126,6 +135,7 @@ linkVTree vdom expression = do
 
       joinAction acc _ =
          acc
+
 
 unlinkVTree :: VTree -> IO VTree
 unlinkVTree tree = do

@@ -7,7 +7,7 @@ import VirtualDOM.VNode
 import VirtualDOM.Patch
 import DOM
 import EvStore
-import EventHandler
+import Event
 import HTML.Types
 import Control.Concurrent
 import Control.Concurrent.STM

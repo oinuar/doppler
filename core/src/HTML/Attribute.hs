@@ -7,7 +7,7 @@ module HTML.Attribute (
 
 import Core.Interpolation
 import CSS.Types                  (Property)
-import Event
+import Event.Types
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 

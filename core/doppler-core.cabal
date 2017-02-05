@@ -15,7 +15,7 @@ library
                        HTML.Syntax,
                        CSS.Types,
                        CSS.Syntax,
-                       Event
+                       Event.Types
   other-modules:       Core.Syntax,
                        Core.Interpolation,
                        HTML.Expression,

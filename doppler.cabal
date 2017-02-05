@@ -21,7 +21,7 @@ library
                        VirtualDOM.Patch,
                        DOM,
                        EvStore,
-                       EventHandler
+                       Event
   default-extensions:  QuasiQuotes
   other-extensions:    JavaScriptFFI
   ghc-options:         -Wall
