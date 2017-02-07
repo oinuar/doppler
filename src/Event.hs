@@ -1,7 +1,7 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
 module Event (
-   EventHandler, EventHandlerIO, JSEvent, module T, toEvent
+   EventHandler, JSEvent, module T, toEvent
 ) where
 
 import Event.Types as T
@@ -15,12 +15,8 @@ import Data.JSString                (pack)
 
 newtype JSEvent = JSEvent Event
 
-type EventHandler a s = (T.Event -> s -> s) -> a
-type EventHandlerIO s = EventHandler (IO ()) s
-
-toEvent :: JSEvent -> Event
-toEvent (JSEvent event) =
-   event
+type Handler s = T.Event -> s -> IO s
+type EventHandler a s = Handler s -> a
 
 instance FromJSVal JSEvent where
    fromJSVal val = do
@@ -30,6 +26,9 @@ instance FromJSVal JSEvent where
 
       return $ foldl (<|>) Nothing xs
 
+toEvent :: JSEvent -> Event
+toEvent (JSEvent event) =
+   event
 
 fromFocusEvent :: JSVal -> IO (Maybe JSEvent)
 fromFocusEvent val =

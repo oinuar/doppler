@@ -11,6 +11,7 @@ import Event
 import HTML.Types
 import Control.Concurrent
 import Control.Concurrent.STM
+import Control.Monad          (when)
 import GHCJS.Foreign.Callback
 import GHCJS.Types            (JSVal)
 import Data.JSString          (JSString, pack)
@@ -21,28 +22,29 @@ class View s where
 render :: (Eq s, View s) => s -> IO ()
 render initialState = do
    stateVar <- newTVarIO initialState
+   synchronizationVar <- newTVarIO True
 
    vdom <- requireVDom
-   tree <- linkVTree vdom $ mkView (runEvent stateVar) initialState
+   tree <- linkVTree vdom $ mkView (runEvent synchronizationVar stateVar) initialState
    root <- createDomNode vdom $ getRoot tree
    replaceBody root
 
-   _ <- forkIO $ monitorStateChange stateVar initialState vdom tree root
+   _ <- forkIO $ monitorStateChange synchronizationVar stateVar initialState vdom tree root
    startEventSinks
 
-monitorStateChange :: (Eq s, View s) => TVar s -> s -> VDom -> VTree -> DomNode -> IO ()
-monitorStateChange stateVar oldState vdom tree root = do
+monitorStateChange :: (Eq s, View s) => TVar Bool -> TVar s -> s -> VDom -> VTree -> DomNode -> IO ()
+monitorStateChange synchronizationVar stateVar oldState vdom tree root = do
    (newState, expression) <- atomically $ do
       newState <- readTVar stateVar
       check (oldState /= newState)
-      return (newState, mkView (runEvent stateVar) newState)
+      return (newState, mkView (runEvent synchronizationVar stateVar) newState)
 
    newTree <- linkVTree vdom expression
    patches <- diff vdom (getRoot tree) (getRoot newTree)
    newRoot <- patch vdom root patches
    _ <- unlinkVTree tree
 
-   monitorStateChange stateVar newState vdom newTree newRoot
+   monitorStateChange synchronizationVar stateVar newState vdom newTree newRoot
 
 startEventSinks :: IO ()
 startEventSinks = do
@@ -65,9 +67,23 @@ startEventSink evStore name = do
    startEventCapturing name delegate
    return delegate
 
-runEvent :: TVar s -> EventHandler [Action] s
-runEvent stateVar handler =
+runEvent :: TVar Bool -> TVar s -> EventHandler [Action] s
+runEvent synchronizationVar stateVar handler =
    [Action runStateUpdate]
    where
-      runStateUpdate event =
-         atomically $ modifyTVar stateVar $ handler event
+      runStateUpdate event = do
+         state <- atomically $ readSync stateVar
+         state' <- handler event state
+         atomically $ writeSync stateVar state'
+
+      readSync var = do
+         state <- readTVar var
+         synchronized <- readTVar synchronizationVar
+         check synchronized
+         writeTVar synchronizationVar False
+         return state
+
+      writeSync var state = do
+         writeTVar var state
+         synchronized <- swapTVar synchronizationVar True
+         when synchronized $ fail "State should not be synchronized at this point, but it was"

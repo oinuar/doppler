@@ -88,9 +88,7 @@ linkVTree vdom expression = do
                event <- fromJSVal val
 
                case event of
-                  Just event' -> do
-                     print (toEvent event')
-                     action $ toEvent event'
+                  Just event' -> action $ toEvent event'
                   Nothing -> return ()
 
             mkKey x xs =

@@ -45,5 +45,6 @@ instance View ApplicationState where
                2 -> "blue"
                _ -> "white"
 
-         click _ state =
-            state { getNumberOfClicks = getNumberOfClicks state + 1 }
+         click event state = do
+            print event
+            return $ state { getNumberOfClicks = getNumberOfClicks state + 1 }
