@@ -12,6 +12,7 @@ import HTML.Types
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Monad          (when)
+import Control.Exception
 import GHCJS.Foreign.Callback
 import GHCJS.Types            (JSVal)
 import Data.JSString          (JSString, pack)
@@ -73,8 +74,16 @@ runEvent synchronizationVar stateVar handler =
    where
       runStateUpdate event = do
          state <- atomically $ readSync stateVar
+         flip catch handleException $ runHandler event state
+
+      runHandler event state = do
          state' <- handler event state
          atomically $ writeSync stateVar state'
+
+      handleException :: SomeException -> IO ()
+      handleException e = do
+         atomically finishSync
+         throw e
 
       readSync var = do
          state <- readTVar var
@@ -85,5 +94,8 @@ runEvent synchronizationVar stateVar handler =
 
       writeSync var state = do
          writeTVar var state
+         finishSync
+
+      finishSync = do
          synchronized <- swapTVar synchronizationVar True
          when synchronized $ fail "State should not be synchronized at this point, but it was"
