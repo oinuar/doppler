@@ -12,6 +12,5 @@ newtype EvStore = EvStore JSVal
 foreign import javascript interruptible "require(['ev-store'], $c);"
    requireEvStore :: IO EvStore
 
--- TODO: delegate event parameters also.
 foreign import javascript unsafe "if ($3.target !== undefined && $1($3.target)[$2] !== undefined) $1($3.target)[$2]($3);"
    delegateEvent :: EvStore -> JSString -> JSVal -> IO ()

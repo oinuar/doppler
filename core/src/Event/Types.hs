@@ -6,7 +6,11 @@ import Data.Word
 import Data.Int
 
 data Event =
-     FocusEvent
+     GenericEvent
+   | FocusEvent
+   | InputEvent {
+      getValue :: String
+   }
    | KeyboardEvent {
       getCharCode :: Word,
       getKeyCode :: Word,

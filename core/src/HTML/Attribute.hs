@@ -32,6 +32,16 @@ newtype Attribute = Attribute {
 class IsHTMLAttribute a where
    toAttributeValue :: a -> Value
 
+instance Monoid Value where
+   mempty =
+      StringValue ""
+
+   mappend (StringValue a) (StringValue b) =
+      StringValue (a ++ b)
+
+   mappend a _ =
+      a
+
 instance IsHTMLAttribute Value where
    toAttributeValue = id
 
@@ -55,6 +65,10 @@ instance IsHTMLAttribute Property where
 
 instance IsHTMLAttribute Action where
    toAttributeValue = EventValue
+
+instance IsHTMLAttribute a => IsHTMLAttribute [a] where
+   toAttributeValue =
+      mconcat . map toAttributeValue
 
 instance Lift Value where
    lift (StringValue content) =

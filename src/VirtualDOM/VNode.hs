@@ -18,7 +18,9 @@ import Data.JSString        (pack)
 import Control.Applicative  ((<$>), (<|>))
 import JavaScript.Array     (JSArray, fromList)
 
-newtype VNode = VNode { jsVNode :: JSVal }
+newtype VNode = VNode JSVal
+
+instance IsJSVal VNode
 
 data VTree = VTree {
    getRoot :: VNode,
@@ -40,7 +42,7 @@ linkVTree vdom expression = do
       toVNode' (Element tagName attributes children) = do
          (attrs, eventListeners) <- foldr setAttribute (flip (,) [] <$> create) attributes
          childs <- mapM toVNode' children
-         node <- mkNode vdom (pack tagName) attrs (fromList $ map (jsVNode . fst) childs)
+         node <- mkNode vdom (pack tagName) attrs (fromList $ map (jsval . fst) childs)
          return (node, eventListeners ++ concatMap snd childs)
 
       toVNode' _ =
@@ -50,11 +52,19 @@ linkVTree vdom expression = do
          (obj, eventListeners) <- acc
 
          case toStringVal key values <|> toCssVal key values <|> toCallbackVal key values of
+            -- Set property with a custom key (because of wrapped event listeners) and
+            -- extend the list of outstanding event listeners.
             Just (k, v) -> do
                (v', eventListeners') <- v
                setProp k v' obj
                return (obj, eventListeners' ++ eventListeners)
-            _ -> return (obj, eventListeners)
+
+            -- Set property to null ref if it has no values.
+            -- TODO: this does not work with custom keys. Refactor code
+            -- below to support key customization without values.
+            _ -> do
+               setProp (pack key) nullRef obj
+               return (obj, eventListeners)
 
       setAttribute _ acc =
          acc

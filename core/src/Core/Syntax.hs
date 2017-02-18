@@ -4,7 +4,6 @@ module Core.Syntax (
 ) where
 
 import Text.Parsec
-import Language.Haskell.TH
 import Text.Parsec.String  (Parser)
 
 parseWhitespaces :: Parser String

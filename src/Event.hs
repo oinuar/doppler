@@ -7,10 +7,13 @@ module Event (
 import Event.Types as T
 import GHCJS.Marshal
 import GHCJS.Types
+import GHCJS.Nullable
 import JavaScript.Object
+import Control.Monad.Trans.Maybe
 import JavaScript.Object.Internal   (Object (..))
 import Data.Maybe                   (fromJust)
 import Control.Applicative          ((<|>))
+import Control.Monad                (guard)
 import Data.JSString                (pack)
 
 newtype JSEvent = JSEvent Event
@@ -22,7 +25,8 @@ instance FromJSVal JSEvent where
    fromJSVal val = do
       xs <- sequence [fromFocusEvent val,
                       fromMouseEvent val,
-                      fromKeyboardEvent val]
+                      fromKeyboardEvent val,
+                      fromEvent val]
 
       return $ foldl (<|>) Nothing xs
 
@@ -116,6 +120,40 @@ fromKeyboardEvent val =
          | otherwise =
             return Nothing
 
+fromEvent :: JSVal -> IO (Maybe JSEvent)
+fromEvent val =
+   let precondition = isEvent val
+   in fromEvent' precondition $ Object val
+   where
+      fromEvent' shouldMarshal obj
+         | shouldMarshal = do
+            value <- runMaybeT $ inputValue obj
+
+            -- JS just passes a generic event for changes in input elements.
+            -- This would complicate user code base because we must look at
+            -- target element to see what value has just changed. We create a
+            -- pseudo event for input elements here to hide this stupidity.
+            return . Just . JSEvent $ case value of
+               Just value' -> InputEvent { getValue = value' }
+               Nothing -> GenericEvent
+         | otherwise =
+            return Nothing
+
+      inputValue :: Object -> MaybeT IO String
+      inputValue obj = do
+         target <- Object <$> liftProp (getProp (pack "target") obj)
+         nodeName <- liftProp $ getProp (pack "nodeName") target
+         nodeName' <- MaybeT $ fromJSVal nodeName
+
+         guard $ nodeName' == "INPUT" || nodeName' == "SELECT"
+
+         value <- liftProp $ getProp (pack "value") target
+         MaybeT $ fromJSVal value
+
+      liftProp =
+         MaybeT . fmap (nullableToMaybe . Nullable)
+
+
 foreign import javascript unsafe "$1 instanceof FocusEvent"
    isFocusEvent :: JSVal -> Bool
 
@@ -124,3 +162,6 @@ foreign import javascript unsafe "$1 instanceof MouseEvent"
 
 foreign import javascript unsafe "$1 instanceof KeyboardEvent"
    isKeyboardEvent :: JSVal -> Bool
+
+foreign import javascript unsafe "$1 instanceof Event"
+   isEvent :: JSVal -> Bool

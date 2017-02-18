@@ -56,11 +56,9 @@ startEventSinks = do
    -- gets destroyed (and these listeners will too). Main point is that
    -- we don't create new listeners every time: we only have one listener
    -- for each event type that are alive as long as the page itself is alive.
-   _ <- startEventSink evStore $ pack "click"
-
-   -- TODO: add more captures.
-
-   return ()
+   mapM_ (startEventSink evStore . pack) ["click",
+                                          "change",
+                                          "input"] -- TODO: add more captures.
 
 startEventSink :: EvStore -> JSString -> IO (Callback (JSVal -> IO ()))
 startEventSink evStore name = do
