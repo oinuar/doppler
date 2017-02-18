@@ -73,27 +73,27 @@ runEvent synchronizationVar stateVar handler =
    [Action runStateUpdate]
    where
       runStateUpdate event = do
-         state <- atomically $ readSync stateVar
-         flip catch handleException $ runHandler event state
+         state <- atomically readSync
+         handle handleException $ runHandler event state
 
       runHandler event state = do
          state' <- handler event state
-         atomically $ writeSync stateVar state'
+         atomically $ writeSync state'
 
       handleException :: SomeException -> IO ()
       handleException e = do
          atomically finishSync
          throw e
 
-      readSync var = do
-         state <- readTVar var
+      readSync = do
+         state <- readTVar stateVar
          synchronized <- readTVar synchronizationVar
          check synchronized
          writeTVar synchronizationVar False
          return state
 
-      writeSync var state = do
-         writeTVar var state
+      writeSync state = do
+         writeTVar stateVar state
          finishSync
 
       finishSync = do
