@@ -17,3 +17,10 @@ dist/build/doppler-sample-skeleton/*
 dist/build/doppler-sample-skeleton/doppler-sample-skeleton.jsexe/*
 !dist/build/doppler-sample-skeleton/doppler-sample-skeleton.jsexe/ext.js
 !dist/build/doppler-sample-skeleton/doppler-sample-skeleton.jsexe/index.html
+
+!dist/build/doppler-sample-todo/
+dist/build/doppler-sample-todo/*
+!dist/build/doppler-sample-todo/doppler-sample-todo.jsexe/
+dist/build/doppler-sample-todo/doppler-sample-todo.jsexe/*
+!dist/build/doppler-sample-todo/doppler-sample-todo.jsexe/ext.js
+!dist/build/doppler-sample-todo/doppler-sample-todo.jsexe/index.html
