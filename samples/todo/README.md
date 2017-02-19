@@ -1,4 +1,4 @@
-## Doppler skeleton sample
+## Doppler TODO sample
 
 This sample contains a TODO app where you can add things to do. It shows how to...
 

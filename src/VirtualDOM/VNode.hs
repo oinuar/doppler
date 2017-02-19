@@ -15,7 +15,7 @@ import qualified CSS.Types  as CSS
 import DOM                  (DomNode)
 import Data.Char            (toLower)
 import Data.JSString        (pack)
-import Control.Applicative  ((<$>), (<|>))
+import Control.Applicative  ((<$>))
 import JavaScript.Array     (JSArray, fromList)
 
 newtype VNode = VNode JSVal
@@ -26,6 +26,7 @@ data VTree = VTree {
    getRoot :: VNode,
    getAttachedEventListeners :: [Callback (JSVal -> IO ())]
 }
+
 
 linkVTree :: VDom -> Expression -> IO VTree
 linkVTree vdom expression = do
@@ -51,58 +52,68 @@ linkVTree vdom expression = do
       setAttribute (Attribute (key, Values values)) acc = do
          (obj, eventListeners) <- acc
 
-         case toStringVal key values <|> toCssVal key values <|> toCallbackVal key values of
+         case toStringVal key values `failback` toCssVal key values `failback` toCallbackVal key values of
             -- Set property with a custom key (because of wrapped event listeners) and
             -- extend the list of outstanding event listeners.
-            Just (k, v) -> do
+            (k, Just v) -> do
                (v', eventListeners') <- v
                setProp k v' obj
                return (obj, eventListeners' ++ eventListeners)
 
             -- Set property to null ref if it has no values.
-            -- TODO: this does not work with custom keys. Refactor code
-            -- below to support key customization without values.
-            _ -> do
-               setProp (pack key) nullRef obj
+            (k, Nothing) -> do
+               setProp k nullRef obj
                return (obj, eventListeners)
 
       setAttribute _ acc =
          acc
 
-      toStringVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (JSVal -> IO ())]))
+      failback _ rhs@(_, Just _) =
+         rhs
+
+      failback lhs _ =
+         lhs
+
+      toStringVal :: Key -> [Value] -> (JSString, Maybe (IO (JSVal, [Callback (JSVal -> IO ())])))
       toStringVal key =
-         fmap toStringVal' . foldr joinString Nothing
+         (,) (pack key) . fmap toStringVal' . foldr joinString Nothing
          where
             toStringVal' =
-               (,) (pack key) . return . flip (,) [] . jsval . pack
+               return . flip (,) [] . jsval . pack
 
-      toCssVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (JSVal -> IO ())]))
+      toCssVal :: Key -> [Value] -> (JSString, Maybe (IO (JSVal, [Callback (JSVal -> IO ())])))
       toCssVal key =
-         fmap toCssVal' . foldr joinCss Nothing
+         (,) (pack key) . fmap toCssVal' . foldr joinCss Nothing
          where
-            toCssVal' obj = (pack key, do
+            toCssVal' obj = do
                obj' <- obj
-               return (jsval obj', []))
+               return (jsval obj', [])
 
-      toCallbackVal :: Key -> [Value] -> Maybe (JSString, IO (JSVal, [Callback (JSVal -> IO ())]))
+      toCallbackVal :: Key -> [Value] -> (JSString, Maybe (IO (JSVal, [Callback (JSVal -> IO ())])))
       toCallbackVal key =
          case key of
-            'o':'n':x:xs -> fmap (toCallbackVal' $ mkKey x xs) . foldl joinAction Nothing
-            _ -> const Nothing
+            'o':'n':x:xs -> (,) (mkKey x xs) . fmap toCallbackVal' . foldl joinAction Nothing
+            _ -> (,) (pack key) . const Nothing
          where
-            toCallbackVal' key' action = (pack key', do
+            toCallbackVal' action = do
                callback <- asyncCallback1 $ runAction action
-               return (jsval callback, [callback]))
+               return (jsval callback, [callback])
 
             runAction action val = do
                event <- fromJSVal val
 
                case event of
+                  -- Run a callback if event marshalling succeeded.
                   Just event' -> action $ toEvent event'
+
+                  -- Skip silently if event marshalling failed.
                   Nothing -> return ()
 
+            -- vdom uses hyperscript and it has a hard coded ev-store support that
+            -- binds callbacks with ev- prefix. Here we convert event keys to
+            -- ev- prefix.
             mkKey x xs =
-               "ev-" ++ toLower x : xs
+               pack $ "ev-" ++ toLower x : xs
 
       joinString :: Value -> Maybe String -> Maybe String
       joinString (StringValue content) Nothing =
