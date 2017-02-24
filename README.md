@@ -31,7 +31,7 @@ just take a look at samples.
 ## How to build?
 
 Project depends on `doppler-html`, `doppler-css` and `doppler-event`.
-The main projet (`doppler-ghcjs`) contains only GHCJS depedency sources.
+The main project (`doppler-ghcjs`) contains only GHCJS depedency sources.
 This is done to allow us to build and test core functionality of the library
 without GHCJS dependency. If you don't have [GHCJS](https://github.com/ghcjs/ghcjs)
 installed, please consult to GHCJS documentation for details.
@@ -62,5 +62,5 @@ You can then build the main project.
 cabal build
 ```
 
-This will build the library and all samples. You can find samples inside `dist`
+This will build the library and all samples. You can find samples inside `dist/build`
 folder with `*.jsexe` ending.
