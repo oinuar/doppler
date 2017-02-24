@@ -1,6 +1,6 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
-module VirtualDOM.VDom (
+module Doppler.GHCJS.VirtualDOM.VDom (
    VDom, requireVDom
 ) where
 

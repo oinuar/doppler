@@ -1,8 +1,8 @@
 module Main where
 
-import Application (ApplicationState (..))
-import View        (render)
 import Entry
+import Application        (ApplicationState (..))
+import Doppler.GHCJS.View (render)
 
 main :: IO ()
 main =

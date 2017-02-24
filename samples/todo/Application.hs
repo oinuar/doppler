@@ -4,9 +4,9 @@ module Application (
    ApplicationState (..)
 ) where
 
-import HTML.Syntax
-import View
-import Event.Types
+import Doppler.HTML.Syntax
+import Doppler.GHCJS.View
+import Doppler.Event.Types
 import Entry
 
 data ApplicationState = ApplicationState {

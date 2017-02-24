@@ -1,4 +1,4 @@
-# Doppler
+# Doppler GHCJS
 
 Doppler is a simple Haskell library that provides an easy and typesafe way to
 render and update DOM trees in Javascript. Doppler is inspired by React and
@@ -30,34 +30,28 @@ just take a look at samples.
 
 ## How to build?
 
-Project has two Cabal projects. Library `doppler-core` contains all generic Haskell
-source files. The main projet (`doppler`) contains only GHCJS depedency sources.
+Project depends on `doppler-html`, `doppler-css` and `doppler-event`.
+The main projet (`doppler-ghcjs`) contains only GHCJS depedency sources.
 This is done to allow us to build and test core functionality of the library
 without GHCJS dependency. If you don't have [GHCJS](https://github.com/ghcjs/ghcjs)
 installed, please consult to GHCJS documentation for details.
 
-To build the project, we use Cabal sandboxes. First, a sandbox is created and
-configured for the core project.
+To build the project, we use Cabal sandboxes. First, pull and configure
+sandboxes for dependency projects.
 
 ```
-cd core
-cabal sandbox init
-cabal install --enable-tests --only-dep
-cabal configure --enable-tests
-```
-
-Then you can run tests to ensure that the code works as expected.
-
-```
-cabal test
+cd {doppler-html, doppler-css, doppler-event}
+cabal sandbox init --sandbox ../.doppler-sandbox
 ```
 
 Now we can create and configure a sandbox for the main project.
 
 ```
-cd ..
+cd doppler-ghcjs
 cabal sandbox init
-cabal sandbox add-source core/
+cabal sandbox add-source ../doppler-html
+cabal sandbox add-source ../doppler-css
+cabal sandbox add-source ../doppler-event
 cabal install --only-dep
 cabal configure
 ```

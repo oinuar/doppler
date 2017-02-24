@@ -4,9 +4,9 @@ module Application (
    ApplicationState (..)
 ) where
 
-import HTML.Syntax
-import CSS.Syntax
-import View
+import Doppler.HTML.Syntax
+import Doppler.CSS.Syntax
+import Doppler.GHCJS.View
 
 newtype ApplicationState = ApplicationState {
    getNumberOfClicks :: Int

@@ -1,22 +1,22 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
-module VirtualDOM.VNode (
+module Doppler.GHCJS.VirtualDOM.VNode (
    VNode, VTree (getRoot), createDomNode, linkVTree, unlinkVTree
 ) where
 
-import HTML.Types
-import VirtualDOM.VDom
-import Event
+import Doppler.HTML.Types
+import Doppler.GHCJS.VirtualDOM.VDom
+import Doppler.GHCJS.Event
 import GHCJS.Types
 import GHCJS.Marshal
 import GHCJS.Foreign.Callback
 import JavaScript.Object
-import qualified CSS.Types  as CSS
-import DOM                  (DomNode)
-import Data.Char            (toLower)
-import Data.JSString        (pack)
-import Control.Applicative  ((<$>))
-import JavaScript.Array     (JSArray, fromList)
+import qualified Doppler.CSS.Types   as CSS
+import Doppler.GHCJS.DOM             (DomNode)
+import Data.Char                     (toLower)
+import Data.JSString                 (pack)
+import Control.Applicative           ((<$>))
+import JavaScript.Array              (JSArray, fromList)
 
 newtype VNode = VNode JSVal
 

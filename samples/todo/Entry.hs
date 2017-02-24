@@ -2,8 +2,8 @@
 
 module Entry where
 
-import HTML.Types
-import HTML.Syntax
+import Doppler.HTML.Types
+import Doppler.HTML.Syntax
 
 newtype Entry = Entry String deriving Eq
 newtype Entries = Entries [Entry] deriving Eq

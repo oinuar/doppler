@@ -6,7 +6,6 @@ node_modules
 amd_modules
 cabal.sandbox.config
 *.tix
-core/dist
 dist/*
 !dist/build/
 dist/build/*

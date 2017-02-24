@@ -1,10 +1,10 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
-module Event (
+module Doppler.GHCJS.Event (
    EventHandler, JSEvent, module T, toEvent
 ) where
 
-import Event.Types as T
+import Doppler.Event.Types as T
 import GHCJS.Marshal
 import GHCJS.Types
 import GHCJS.Nullable

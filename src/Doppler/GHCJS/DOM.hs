@@ -1,6 +1,6 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
-module DOM (
+module Doppler.GHCJS.DOM (
    DomNode, startEventCapturing, stopEventCapturing, replaceBody
 ) where
 

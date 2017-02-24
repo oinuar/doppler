@@ -1,13 +1,13 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
-module VirtualDOM.Patch (
+module Doppler.GHCJS.VirtualDOM.Patch (
    diff, patch
 ) where
 
-import VirtualDOM.VDom
-import VirtualDOM.VNode
-import DOM               (DomNode)
-import GHCJS.Types       (JSVal)
+import Doppler.GHCJS.VirtualDOM.VDom
+import Doppler.GHCJS.VirtualDOM.VNode
+import Doppler.GHCJS.DOM               (DomNode)
+import GHCJS.Types                     (JSVal)
 
 newtype Patch = Patch JSVal
 

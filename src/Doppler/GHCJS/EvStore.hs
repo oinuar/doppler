@@ -1,6 +1,6 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
-module EvStore (
+module Doppler.GHCJS.EvStore (
    EvStore, requireEvStore, delegateEvent
 ) where
 

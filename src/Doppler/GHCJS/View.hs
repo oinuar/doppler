@@ -1,14 +1,14 @@
-module View (
+module Doppler.GHCJS.View (
    View (..), render
 ) where
 
-import VirtualDOM.VDom
-import VirtualDOM.VNode
-import VirtualDOM.Patch
-import DOM
-import EvStore
-import Event
-import HTML.Types
+import Doppler.GHCJS.VirtualDOM.VDom
+import Doppler.GHCJS.VirtualDOM.VNode
+import Doppler.GHCJS.VirtualDOM.Patch
+import Doppler.GHCJS.DOM
+import Doppler.GHCJS.EvStore
+import Doppler.GHCJS.Event
+import Doppler.HTML.Types
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Monad          (when)
