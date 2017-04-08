@@ -4,7 +4,7 @@ module Application (
    ApplicationState (..)
 ) where
 
-import Doppler.HTML.Syntax
+import Doppler.Html.Syntax
 import Doppler.GHCJS.View
 import Doppler.Event.Types
 import Entry

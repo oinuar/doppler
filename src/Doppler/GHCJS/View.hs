@@ -8,7 +8,7 @@ import Doppler.GHCJS.VirtualDOM.Patch
 import Doppler.GHCJS.DOM
 import Doppler.GHCJS.EvStore
 import Doppler.GHCJS.Event
-import Doppler.HTML.Types
+import Doppler.Html.Types
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Monad          (when)
@@ -18,7 +18,7 @@ import GHCJS.Types            (JSVal)
 import Data.JSString          (JSString, pack)
 
 class View s where
-   mkView :: EventHandler [Action] s -> s -> Expression
+   mkView :: EventHandler [HtmlAction] s -> s -> Html
 
 render :: (Eq s, View s) => s -> IO ()
 render initialState = do
@@ -35,12 +35,12 @@ render initialState = do
 
 monitorStateChange :: (Eq s, View s) => TVar Bool -> TVar s -> s -> VDom -> VTree -> DomNode -> IO ()
 monitorStateChange synchronizationVar stateVar oldState vdom tree root = do
-   (newState, expression) <- atomically $ do
+   (newState, doc) <- atomically $ do
       newState <- readTVar stateVar
       check (oldState /= newState)
       return (newState, mkView (runEvent synchronizationVar stateVar) newState)
 
-   newTree <- linkVTree vdom expression
+   newTree <- linkVTree vdom doc
    patches <- diff vdom (getRoot tree) (getRoot newTree)
    newRoot <- patch vdom root patches
    _ <- unlinkVTree tree
@@ -66,9 +66,9 @@ startEventSink evStore name = do
    startEventCapturing name delegate
    return delegate
 
-runEvent :: TVar Bool -> TVar s -> EventHandler [Action] s
+runEvent :: TVar Bool -> TVar s -> EventHandler [HtmlAction] s
 runEvent synchronizationVar stateVar handler =
-   [Action runStateUpdate]
+   [HtmlAction runStateUpdate]
    where
       runStateUpdate event = do
          state <- atomically readSync
