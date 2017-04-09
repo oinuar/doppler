@@ -6,15 +6,16 @@ module Doppler.GHCJS.VirtualDOM.VNode (
 
 import Doppler.Html.Types
 import Doppler.GHCJS.VirtualDOM.VDom
---import Doppler.GHCJS.Event
+import Doppler.GHCJS.Event
 import GHCJS.Types
---import GHCJS.Marshal
+import GHCJS.Marshal
 import GHCJS.Foreign.Callback
 import JavaScript.Object
 import qualified Doppler.Css.Types   as Css
 import Doppler.GHCJS.DOM             (DomNode)
+import Data.Char                     (toLower)
 import Data.JSString                 (pack)
-import Control.Applicative           ((<$>))
+import Control.Applicative           ((<$>), liftA2, (<|>))
 import JavaScript.Array              (JSArray, fromList)
 
 newtype VNode = VNode JSVal
@@ -62,35 +63,101 @@ linkVTree vdom doc = do
          node <- mkNode vdom (pack tagName) attrs (fromList [])
          return (node, eventListeners)
 
-      setAttribute (key, []) acc = do
+      setAttribute (key, AttributeValues []) acc = do
          (obj, eventListeners) <- acc
          setProp (pack key) nullRef obj
          return (obj, eventListeners)
 
-      setAttribute (key, values) acc = do
+      setAttribute (key, AttributeValues values) acc = do
          (obj, eventListeners) <- acc
-         styleObj <- create
-         styleObj' <- buildStyleObject styleObj values
+         result <-               buildStyleObject Nothing key values
+                   `alternative` buildCallback key values
+                   `alternative` buildValue key values
 
-         val <- case styleObj' of
-            Just styleObj'' -> return styleObj''
-            Nothing -> let (Value value) = mconcat values
-                       in return . jsval . pack $ value
+         case result of
+            Just (key', val, listeners) -> do
+               setProp key' val obj
+               return (obj, eventListeners ++ listeners)
 
-         setProp (pack key) val obj
-         return (obj, eventListeners)
+            Nothing -> do
+               let (Value value) = mconcat values
+               setProp (pack key) (jsval $ pack value) obj
+               return (obj, eventListeners)
 
-      buildStyleObject :: Object -> [HtmlAttributeValue] -> IO (Maybe JSVal)
-      buildStyleObject obj (StyleValue (Css.CssProperty (name, values)) : xs) = do
-         let (Css.Value value) = mconcat values
-         setProp (pack name) (jsval . pack $ value) obj
+      setAttribute _ acc =
+         acc
 
-         case xs of
-            [] -> return . Just . jsval $ obj
-            _ -> buildStyleObject obj xs
+      alternative =
+         liftA2 (<|>)
 
-      buildStyleObject _ _ =
+      buildValue :: HtmlAttributeName -> [HtmlAttributeValue] -> IO (Maybe (JSString, JSVal, [Callback (JSVal -> IO ())]))
+      buildValue key values =
+         case joinValues values of
+            Just value -> return $ Just (pack key, jsval $ pack value, [])
+            Nothing -> return Nothing
+         where
+            joinValues (a@Value{} : b@Value{} : xs) =
+               let x = a `mappend` b
+               in joinValues (x : xs)
+
+            joinValues [Value x] =
+               Just x
+
+            joinValues _ =
+               Nothing
+
+      buildStyleObject :: Maybe Object -> HtmlAttributeName -> [HtmlAttributeValue] -> IO (Maybe (JSString, JSVal, [Callback (JSVal -> IO ())]))
+      buildStyleObject obj key (StyleValue (Css.CssProperty (name, values)) : xs) =
+         case mconcat values of
+            Css.Value value -> do
+               obj' <- maybe create return obj
+               setProp (pack name) (jsval $ pack value) obj'
+               buildStyleObject (Just obj') key xs
+            _ -> return Nothing
+
+      buildStyleObject (Just obj) key [] =
+         return $ Just (pack key, jsval obj, [])
+
+      buildStyleObject _ _ _ =
          return Nothing
+
+      buildCallback :: HtmlAttributeName -> [HtmlAttributeValue] -> IO (Maybe (JSString, JSVal, [Callback (JSVal -> IO ())]))
+      buildCallback ('o' : 'n' : firstLetter : restLetters) values =
+         case joinEventValues values of
+            Just action -> do
+               callback <- asyncCallback1 $ execute action
+               return $ Just (mkKey firstLetter restLetters, jsval callback, [callback])
+            Nothing -> return Nothing
+         where
+            joinEventValues (a@EventValue{} : b@EventValue{} : xs) =
+               let x = a `mappend` b
+               in joinEventValues (x : xs)
+
+            joinEventValues [EventValue x] =
+               Just x
+
+            joinEventValues _ =
+               Nothing
+
+            execute action val = do
+               event <- fromJSVal val
+
+               case event of
+                  -- Run a callback if event marshalling succeeded.
+                  Just event' -> runAction action $ toEvent event'
+
+                  -- Skip silently if event marshalling failed.
+                  Nothing -> return ()
+
+            -- vdom uses hyperscript and it has a hard coded ev-store support that
+            -- binds callbacks with ev- prefix. Here we convert event keys to
+            -- ev- prefix.
+            mkKey x xs =
+               pack $ "ev-" ++ toLower x : xs
+
+      buildCallback _ _ =
+         return Nothing
+
 
 unlinkVTree :: VTree -> IO VTree
 unlinkVTree tree = do
